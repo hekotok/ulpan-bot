@@ -5,7 +5,10 @@ const bot = new TelegramApi(token, { polling: true })
 
 let homework
 
-const setHomework = async (chatId, text) => {
+const setHomework = async msg => {
+    const text = msg.text.replace('/sethomework', '')
+    const chatId = msg.chat.id
+
     if (text) {
         homework = text
         await bot.sendMessage(chatId, 'Новая домашняя работа задана')
@@ -26,11 +29,14 @@ const start = () => {
     bot.on('message', async msg => {
         const text = msg.text
         const chatId = msg.chat.id
+
+        if (!text)
+            return
     
         if (text === '/start')
             await bot.sendMessage(chatId, 'Привет, я бот самой лучшей группы в ульпане')
         else if (text.includes('/sethomework')) 
-            await setHomework(chatId, text.replace('/sethomework', ''))
+            await setHomework(msg)
         else if (text === '/gethomework')
             await getHomework(chatId)
     })
