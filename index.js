@@ -1,4 +1,6 @@
 const TelegramApi = require('node-telegram-bot-api')
+const fs = require('fs')
+
 const { token } = require('./config')
 
 const bot = new TelegramApi(token, { polling: true })
@@ -11,7 +13,12 @@ const setHomework = async (chatId, msgId) => {
 	await bot.sendMessage(chatId, 'Новая домашняя работа задана')
 }
 
-const getHomework = async chatId => await bot.forwardMessage(chatId, chatId, homework.get(chatId))
+const getHomework = async chatId => {
+	if (homework.has(chatId))
+		await bot.forwardMessage(chatId, chatId, homework.get(chatId))
+	else
+		await bot.sendMessage(chatId, 'Домашку не задали')
+}
 
 const waitHomework = async (chatId, userId) => {
 	bot.sendMessage(chatId, 'Введите домашнее задание.')
@@ -25,7 +32,10 @@ const waitHomework = async (chatId, userId) => {
 
 	const listener = async msg => {
 		if (msg.from.id === userId) {
-			await setHomework(chatId, msg.message_id)
+			if (msg.text === '/cancel')
+				await bot.sendMessage(chatId, 'Установка домашнего задания отменена')
+			else
+				await setHomework(chatId, msg.message_id)
 
 			clearTimeout(timer)
 			delete chatTimers[chatId]
@@ -39,23 +49,14 @@ const start = () => {
 	bot.setMyCommands([
 		{ command: '/sethomework', description: 'Укажи домашку' },
 		{ command: '/gethomework', description: 'Узнай домашку' },
-		{ command: '/translate', description: 'Перевод сообщения' }
+		{ command: '/timetable', description: 'Узнай расписание занятий' },
+		{ command: '/translate', description: 'Переведи сообщение' }
 	])
 
-	bot.on('message', async msg => {
-		const text = msg.text || msg.caption
-		const chatId = msg.chat.id
-
-		if (!text)
-			return
-
-		if (text === '/start')
-			await bot.sendMessage(chatId, 'Привет, я бот самой лучшей группы в ульпане')
-		else if (text === '/sethomework')
-			await waitHomework(chatId, msg.from.id)
-		else if (text === '/gethomework')
-			await getHomework(chatId)
-	})
+	bot.onText(/\/start/, msg => bot.sendMessage(msg.chat.id, 'Привет, я бот самой лучшей группы в ульпане'))
+	bot.onText(/\/sethomework/, msg => waitHomework(msg.chat.id, msg.from.id))
+	bot.onText(/\/gethomework/, msg => getHomework(msg.chat.id))
+	bot.onText(/\/timetable/, msg => bot.sendPhoto(msg.chat.id, fs.readFileSync('./assets/timetable.png')))
 }
 
 start()
