@@ -10,7 +10,6 @@ const { token } = require('./config')
 const bot = new TelegramApi(token, { polling: true })
 
 const homework = new Map()
-const chatTimers = {}
 
 const setHomework = async (chatId, msgId) => {
 	homework.set(chatId, msgId)
@@ -25,14 +24,12 @@ const getHomework = async chatId => {
 }
 
 const waitHomework = async (chatId, userId) => {
-	bot.sendMessage(chatId, 'הזן שאלת בית.\n\nEnter the homework question.\n\nВведите домашнее задание.\n\nEntrez la question du devoir.')
+	await bot.sendMessage(chatId, 'הזן שאלת בית.\n\nEnter the homework question.\n\nВведите домашнее задание.\n\nEntrez la question du devoir.')
 
-	const timer = setTimeout(() => {
-		bot.sendMessage(chatId, 'הזמן נגמר. הגדרת שאלת הבית בוטלה.\n\nTime is up. Setting the homework question has been canceled.\n\nВремя вышло. Установка домашнего задания отменена.\n\nLe temps est écoulé. La définition de la question du devoir a été annulée.')
-		delete chatTimers[chatId]
-	}, 60_000)
-
-	chatTimers[chatId] = timer
+	const timer = setTimeout(
+		() => bot.sendMessage(chatId, 'הזמן נגמר. הגדרת שאלת הבית בוטלה.\n\nTime is up. Setting the homework question has been canceled.\n\nВремя вышло. Установка домашнего задания отменена.\n\nLe temps est écoulé. La définition de la question du devoir a été annulée.'),
+		60_000
+	)
 
 	const listener = async msg => {
 		if (msg.from.id === userId) {
@@ -42,7 +39,7 @@ const waitHomework = async (chatId, userId) => {
 				await setHomework(chatId, msg.message_id)
 
 			clearTimeout(timer)
-			delete chatTimers[chatId]
+			bot.off('message', listener)
 		}
 	}
 
