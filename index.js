@@ -5,7 +5,7 @@ let langDefine
 import('translate').then(response => translate = response)
 import('franc').then(response => langDefine = response)
 
-const { token } = require('./config')
+const token = '6747290210:AAHjSh_64jkZLRc7cZgVcI518IT6LFaDj14'
 
 const bot = new TelegramApi(token, { polling: true })
 
